@@ -10,6 +10,7 @@ export function loadGoogleIdentity() {
       const s = document.createElement("script");
       s.src = "https://accounts.google.com/gsi/client";
       s.async = true;
+      s.referrerPolicy = "strict-origin-when-cross-origin";
       s.onload = () => resolve();
       s.onerror = () => {
         identityScript = null;
