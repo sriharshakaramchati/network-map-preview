@@ -6,7 +6,7 @@ import {
   unlockVault,
   persistVault,
   listVaults,
-  removeVault,
+  clearVaults,
 } from "./vault.mjs";
 import { mapData, contactBook, scriptJson } from "./community-data.mjs";
 import { newMap, upgradeMap, mergeIntoMap, SOURCES } from "./imports/model.mjs";
@@ -15,6 +15,7 @@ import {
   loadGoogleIdentity,
   authorizeGoogle,
   importGoogleContacts,
+  assertGoogleAccount,
   importGmail,
   CONTACTS_SCOPE,
   GMAIL_SCOPE,
@@ -27,7 +28,8 @@ let records = [],
   parsed = null,
   batch = null,
   proposal = null,
-  operation = null;
+  operation = null,
+  googleAutoEmail = "";
 const configPromise = fetch("config.json", { cache: "no-store" })
   .then((r) => (r.ok ? r.json() : {}))
   .catch(() => ({}));
@@ -45,7 +47,9 @@ function fail(error) {
     notice(error.message || "Import could not complete. Please try again.");
 }
 async function savedMaps() {
-  records = (await listVaults()).filter(r=>r.auth?.method!=="google");
+  const all = await listVaults();
+  $("reset-preview").hidden = !all.length;
+  records = all.filter(r=>r.auth?.method!=="google");
   $("saved").hidden = !records.length;
   $("map-choice").replaceChildren(
     ...records.map((r, i) => {
@@ -58,6 +62,7 @@ async function savedMaps() {
 }
 function sources() {
   selected = "";
+  googleAutoEmail = "";
   screen("sources");
   $("map-frame").srcdoc = "";
   $("map-summary").textContent =
@@ -114,6 +119,12 @@ async function prepareGoogleLogin() {
       const record=(await listVaults()).find(r=>r.id===account.id);
       const {password,auth}=googleMapSecret(account,record);
       await enterMap(record,password,account.id,account.name,auth);
+      if (!current.pending && !current.dataset.imports.some(i => i.source === "GOOGLE")) {
+        await selectSource("GOOGLE");
+        googleAutoEmail = account.email;
+        $("skip-google").hidden = false;
+        await $("google-signin").onclick();
+      }
     },fail,busy=>{
       $('create').disabled=busy;
       if(busy) notice('Signing in… The free service may take a moment to wake up.');
@@ -164,6 +175,22 @@ $("unlock-form").onsubmit = async (e) => {
 const lock = () => { globalThis.google?.accounts?.id?.disableAutoSelect?.(); location.replace("index.html"); };
 $("lock").onclick = lock;
 document.querySelectorAll(".lock-map").forEach((b) => (b.onclick = lock));
+$("reset-preview").onclick = async () => {
+  if (!confirm("Delete all saved maps and unfinished imports from this preview on this device? This cannot be undone. Your Google Contacts, MyGate account and original demo will not be changed.")) return;
+  $("reset-preview").disabled = true;
+  try {
+    operation?.abort();
+    if (current?.pending) await endMyGate(current.pending).catch(() => {});
+    await clearVaults();
+    current = null; records = []; batch = null; proposal = null; parsed = null;
+    $("map-frame").srcdoc = "";
+    globalThis.google?.accounts?.id?.disableAutoSelect?.();
+    screen("setup");
+    await savedMaps();
+    notice("Saved preview data cleared. You can start from the beginning.");
+  } catch (error) { fail(error); }
+  finally { $("reset-preview").disabled = false; }
+};
 $("view-map").onclick = () => showMap().catch(fail);
 $("add-contacts").onclick = sources;
 const guides = {
@@ -175,12 +202,13 @@ const guides = {
   GMAIL:
     '<p>Find the people you actually email. We examine address headers from up to 500 sent and 500 inbox messages, then rank correspondents by frequency and recency.</p><p class="fine">We do not read message bodies, subjects or attachments. Obvious automated mail and mailing lists are skipped. This is a sample, not your entire history. You review the people before saving.</p>',
   MYGATE:
-    '<p>Verify your own MyGate account with Reclaim. Only a cryptographically valid MyGate proof can add residents to this map.</p><p class="fine">The callback processes the proof in memory and returns an encrypted directory to this browser.</p>',
+    '<p>Import your community into your own private map.</p><p>Your map is encrypted on this device. It is not published or shared with other users.</p><p class="fine">Reclaim handles your MyGate sign-in. Our service briefly checks the proof to build your map, then returns an encrypted result. We do not log your contacts or proof contents. <a href="https://blog.reclaimprotocol.org/posts/security-faq" target="_blank" rel="noopener noreferrer">How Reclaim protects your data ↗</a></p>',
   TELEGRAM:
     '<p>Use Telegram Desktop’s built-in export. No Telegram login or bot is needed here.</p><ol><li>In Telegram Desktop, open Settings → Advanced → Export Telegram data, or open a chat’s menu → Export chat history.</li><li>Choose machine-readable <strong>JSON</strong> and leave media unchecked. Include contacts and personal chats if available.</li><li>Upload <strong>result.json</strong> below. Names and sender IDs form contacts; message text, media, bots, groups and channels are excluded.</li></ol><p><a href="https://telegram.org/blog/export-and-more" target="_blank" rel="noopener noreferrer">Telegram’s export guide ↗</a></p>',
 };
 async function selectSource(source) {
   selected = source;
+  googleAutoEmail = "";
   parsed = null;
   batch = null;
   proposal = null;
@@ -191,6 +219,7 @@ async function selectSource(source) {
     "file-controls",
     "mapping-form",
     "google-signin",
+    "skip-google",
     "mygate-start",
     "mygate-wait",
     "cancel-import",
@@ -217,7 +246,7 @@ async function selectSource(source) {
     }
     await loadGoogleIdentity();
     if (selected !== source) return;
-    $("google-signin").textContent = "Continue with Google";
+    $("google-signin").textContent = source === "GOOGLE" ? "Import from Google Contacts" : "Continue with Google";
     $("google-signin").disabled = false;
   }
   if (source === "MYGATE") {
@@ -383,30 +412,43 @@ async function cancelImport() {
 }
 $("discard-import").onclick = () => cancelImport().catch(fail);
 $("cancel-import").onclick = () => cancelImport().catch(fail);
+$("skip-google").onclick = () => { operation?.abort(); googleAutoEmail = ""; sources(); };
 $("google-signin").onclick = async () => {
+  const autoEmail = googleAutoEmail;
   $("google-signin").disabled = true;
   $("cancel-import").hidden = false;
   $("back-sources").disabled = true;
-  operation = new AbortController();
-  const signal = operation.signal;
+  const controller = new AbortController();
+  operation = controller;
+  const signal = controller.signal;
   let access = null;
   try {
     const config = await configPromise; // Already resolved before this button is enabled.
     access = await authorizeGoogle(
       config.googleClientId,
-      selected === "GOOGLE" ? CONTACTS_SCOPE : GMAIL_SCOPE,
+      selected === "GOOGLE" ? CONTACTS_SCOPE + (autoEmail ? " openid email" : "") : GMAIL_SCOPE,
+      {loginHint: autoEmail, signal},
     );
+    signal.throwIfAborted();
+    if (autoEmail) await assertGoogleAccount(access.token, autoEmail, signal);
     signal.throwIfAborted();
     notice("Reading from Google…");
     const importer = selected === "GOOGLE" ? importGoogleContacts : importGmail;
     const result = await importer(access.token, { signal, onProgress: notice });
     signal.throwIfAborted();
-    showReview(result);
+    if (autoEmail) {
+      const imported = mergeIntoMap(current.dataset, result, current.id);
+      await saveState(imported.dataset);
+      signal.throwIfAborted();
+      googleAutoEmail = "";
+      await showMap();
+      notice(`Imported ${result.contacts.length} Google contacts into your private map.`);
+    } else showReview(result);
   } catch (error) {
     fail(error);
   } finally {
     access = null;
-    operation = null;
+    if (operation === controller) operation = null;
     $("google-signin").disabled = false;
     $("back-sources").disabled = false;
   }

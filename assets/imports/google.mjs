@@ -25,7 +25,7 @@ export function loadGoogleIdentity() {
     });
   return identityScript;
 }
-export function authorizeGoogle(clientId, scope) {
+export function authorizeGoogle(clientId, scope, {loginHint = "", signal} = {}) {
   if (!/^[\w.-]+\.apps\.googleusercontent\.com$/.test(clientId || ""))
     return Promise.reject(
       new Error(
@@ -33,34 +33,58 @@ export function authorizeGoogle(clientId, scope) {
       ),
     );
   return new Promise((resolve, reject) => {
-    const client = google.accounts.oauth2.initTokenClient({
+    let settled = false;
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      signal?.removeEventListener("abort", abort);
+      fn(value);
+    };
+    const abort = () => finish(reject, new DOMException("Cancelled", "AbortError"));
+    if (signal?.aborted) return abort();
+    signal?.addEventListener("abort", abort, {once:true});
+    let client;
+    try { client = google.accounts.oauth2.initTokenClient({
       client_id: clientId,
       scope,
       include_granted_scopes: false,
-      prompt: "select_account",
+      prompt: loginHint ? "" : "select_account",
+      ...(loginHint ? {login_hint: loginHint} : {}),
       callback: (result) => {
         if (result.error || !result.access_token)
-          return reject(
+          return finish(reject,
             new Error(
               "Google permission was not granted. No contacts were imported.",
             ),
           );
-        if (!google.accounts.oauth2.hasGrantedAllScopes(result, scope))
-          return reject(
+        if (!google.accounts.oauth2.hasGrantedAllScopes(result, ...scope.split(/\s+/)))
+          return finish(reject,
             new Error("The required Google permission was not granted."),
           );
-        resolve({
+        finish(resolve, {
           token: result.access_token,
           expiresAt: Date.now() + Number(result.expires_in || 3600) * 1000,
         });
       },
       error_callback: () =>
-        reject(
+        finish(reject,
           new Error("Google sign-in was closed or blocked. Please try again."),
         ),
     });
     client.requestAccessToken();
+    } catch (error) { finish(reject, error); }
   });
+}
+// Bind automatic imports to the Google account that unlocked this map.
+export async function assertGoogleAccount(token, expectedEmail, signal) {
+  const response = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
+    headers: {Authorization: "Bearer " + token}, credentials: "omit",
+    cache: "no-store", referrerPolicy: "no-referrer", signal,
+  });
+  if (!response.ok) throw new Error("Google could not confirm the Contacts account. Please try again.");
+  const account = await response.json();
+  if (account.email_verified !== true || account.email?.toLowerCase() !== expectedEmail.toLowerCase())
+    throw new Error("Choose the same Google account you used to sign in. No contacts were imported.");
 }
 // Used directly by the browser. Tokens are never sent to our callback, URLs or storage.
 export async function googleJSON(

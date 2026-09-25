@@ -212,3 +212,16 @@ export async function removeVault(id) {
     db.close();
   }
 }
+
+// Clear only this app path's encrypted maps, never other sites or the demo file.
+export async function clearVaults() {
+  const db = await vaultDatabase();
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("vaults", "readwrite");
+      tx.objectStore("vaults").clear();
+      tx.oncomplete = resolve;
+      tx.onerror = tx.onabort = () => reject(new Error("Could not reset saved maps."));
+    });
+  } finally { db.close(); }
+}
