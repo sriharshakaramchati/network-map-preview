@@ -1,3 +1,4 @@
+import {professionalDetails} from './research-model.mjs';
 // Quote every cell and neutralize spreadsheet formula prefixes in user-supplied values.
 const cell = value => {
   let s = String(value ?? '');
@@ -5,8 +6,9 @@ const cell = value => {
   return '"'+s.replaceAll('"','""')+'"';
 };
 export function contactsCSV(contacts) {
-  const headers=['Name','Email','Phone','Company','Role','Unit','Block','LinkedIn URL','Sources','Public profile','Profile confirmation'];
-  return '\ufeff'+[headers,...contacts.map(c=>[c.name,(c.emails||[]).join('; '),(c.phones||[]).join('; '),c.enrichment?.company||c.company,c.enrichment?.role||c.role,c.unit,c.block,c.profile,(c.sources||[]).join('; '),c.enrichment?.url||'',c.enrichment?.confirmedAt||''])].map(row=>row.map(cell).join(',')).join('\r\n')+'\r\n';
+  const headers=['Name','Email','Phone','Company','Role','Unit','Block','LinkedIn URL','Sources','Public profile','Profile confirmation','Profession category','Match confidence','Evidence','Researched at'];
+  const rows=contacts.map(c=>{const p=professionalDetails(c);return [c.name,(c.emails||[]).join('; '),(c.phones||[]).join('; '),p.company,p.role,c.unit,c.block,c.profile,(c.sources||[]).join('; '),p.source?p.url:'',c.enrichment?.confirmedAt||c.research?.confirmedAt||'',p.category,p.confidence,p.evidence,c.research?.checkedAt||''];});
+  return '\ufeff'+[headers,...rows].map(row=>row.map(cell).join(',')).join('\r\n')+'\r\n';
 }
 export function downloadContacts(contacts,filename='my-community.csv') {
   const url=URL.createObjectURL(new Blob([contactsCSV(contacts)],{type:'text/csv;charset=utf-8'}));

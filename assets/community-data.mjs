@@ -1,3 +1,4 @@
+import {professionalDetails} from './research-model.mjs';
 import { SOURCES } from "./imports/model.mjs";
 export function mapData(dataset) {
   let records;
@@ -80,20 +81,21 @@ export function mapData(dataset) {
     const size = sizes.get(primary);
     const radius = center.R * 0.92 * Math.sqrt((j + 0.5) / size),
       theta = j * Math.PI * (3 - Math.sqrt(5));
+    const profession = professionalDetails(c);
     const verified = c.sources.includes("MYGATE"),
       conversation = !!c.interaction;
     const role =
-      [c.enrichment?.role || c.role, c.enrichment?.company || c.company].filter(Boolean).join(" · ") ||
+      [profession.role, profession.company].filter(Boolean).join(" · ") ||
       (c.unit ? `Unit ${c.unit} · ${c.block || "Community"}` : "");
     people.push({
       id: people.length,
       name: c.name,
-      role,
-      link: c.enrichment?.url || c.profile || "",
-      conf: [verified ? "Verified MyGate residency" : "Imported contact", c.enrichment ? `Profile confirmed by you · ${c.enrichment.source}` : ""].filter(Boolean).join(" · "),
+      role: (profession.confidence === "Possible" ? "Possible: " : "") + role,
+      link: profession.url || "",
+      conf: [verified ? "Verified MyGate residency" : "Imported contact", c.enrichment ? `Profile confirmed by you · ${c.enrichment.source}` : c.research?.status === "found" ? `${profession.confidence} professional match · public web${profession.ambiguous ? " · competing profiles" : ""}` : ""].filter(Boolean).join(" · "),
       clusters: c.clusters,
       primary,
-      extra: { flat: c.unit, org: c.enrichment?.company || c.company || "" },
+      extra: { flat: c.unit, org: profession.company || "" },
       row: people.length,
       tier: verified ? "resident" : conversation ? "correspondent" : "contact",
       r: conversation

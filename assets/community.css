@@ -370,3 +370,7 @@ html{scroll-behavior:smooth}.homepage{max-width:1240px;margin:auto;padding:24px 
 #google-login:has(iframe){width:300px;max-width:100%;height:40px;overflow:hidden;border-radius:24px}#google-login iframe{color-scheme:normal}
 
 .profile-candidate{border:1px solid #303849;border-radius:12px;padding:18px;margin:16px 0}.profile-candidate h2{margin-top:0;font-size:22px}.confirmation{display:flex;gap:12px;align-items:flex-start;margin:20px 0}.confirmation input{width:auto;flex-shrink:0;margin-top:4px}#enrichment-confirm{border-top:1px solid #303849;padding-top:24px}#enrichment-link{color:#d8cead}
+/* Preserve readable evidence columns on narrow screens; the existing wrapper scrolls. */
+#research .preview-table table { min-width: 700px; }
+#research .preview-table th, #research .preview-table td { overflow-wrap: normal; }
+#research .preview-table button { min-width: 76px; }

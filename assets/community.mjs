@@ -1,3 +1,4 @@
+import {mountResearch} from './research-ui.mjs';
 import {searchProfiles, applyEnrichment, removeEnrichment} from "./enrichment.mjs";
 import {emailMapId, googleMapSecret, mountGoogleSignIn} from "./account.mjs";
 import {downloadContacts} from "./export.mjs";
@@ -23,6 +24,7 @@ import {
 } from "./imports/google.mjs";
 import { startMyGate, pollMyGate, endMyGate, myGateStatus } from "./imports/mygate.mjs";
 const $ = (id) => document.getElementById(id);
+let research = null;
 let records = [],
   current = null,
   selected = "",
@@ -39,7 +41,7 @@ const notice = (message) => {
 };
 function screen(id) {
   $("demo-section").hidden = id !== "setup";
-  for (const n of ["setup", "sources", "import-panel", "review", "map-view", "enrichment"])
+  for (const n of ["setup", "sources", "import-panel", "review", "map-view", "enrichment", "research"])
     $(n).hidden = n !== id;
   notice("");
 }
@@ -70,6 +72,7 @@ function sources() {
     `${current.dataset.displayName} · ${current.dataset.contacts.length} people in this map`;
   $("view-map").disabled = !current.dataset.contacts.length;
   $("open-enrichment").disabled = !current.dataset.contacts.length;
+  $("open-research").disabled = !current.dataset.contacts.length;
 }
 async function saveState(dataset = current.dataset, pending = current.pending) {
   const value = { kind: "map", dataset, ...(pending ? { pending } : {}) };
@@ -79,7 +82,7 @@ async function saveState(dataset = current.dataset, pending = current.pending) {
   current.dataset = dataset;
   current.pending = pending;
 }
-async function showMap() {
+async function showMap({resume=true}={}) {
   const response = await fetch("assets/community-renderer.html");
   if (!response.ok)
     throw new Error(
@@ -94,6 +97,7 @@ async function showMap() {
       scriptJson(contactBook(current.dataset)),
     );
   screen("map-view");
+  if(resume)research?.resume();
 }
 async function enterMap(record,password,id,displayName,auth) {
   const data = record ? await unlockVault(record,password) : {kind:'map',dataset:newMap(id,displayName)};
@@ -174,7 +178,7 @@ $("unlock-form").onsubmit = async (e) => {
     button.disabled = false;
   }
 };
-const signOut = () => { globalThis.google?.accounts?.id?.disableAutoSelect?.(); location.replace("index.html"); };
+const signOut = async () => { await research?.stop(); globalThis.google?.accounts?.id?.disableAutoSelect?.(); location.replace("index.html"); };
 $("lock").onclick = signOut;
 document.querySelectorAll(".lock-map").forEach((b) => (b.onclick = signOut));
 $("reset-preview").onclick = async () => {
@@ -281,6 +285,8 @@ function mappingUI() {
     ["emails", "Email columns"],
     ["phones", "Phone columns"],
     ["company", "Company"],
+    ["city", "City / area"],
+    ["university", "University"],
     ["role", "Role / position"],
     ["unit", "Unit / flat"],
     ["block", "Block / building"],
@@ -405,7 +411,8 @@ $("save-import").onclick = async () => {
     batch = null;
     proposal = null;
     parsed = null;
-    await showMap();
+    await showMap({resume:false});
+    await research?.afterImport();
   } catch (error) {
     fail(error);
   } finally {
@@ -456,8 +463,9 @@ $("google-signin").onclick = async () => {
       await saveState(imported.dataset);
       signal.throwIfAborted();
       googleAutoEmail = "";
-      await showMap();
+      await showMap({resume:false});
       notice(`Imported ${result.contacts.length} Google contacts into your private map.`);
+      await research?.afterImport();
     } else showReview(result);
   } catch (error) {
     fail(error);
@@ -632,3 +640,6 @@ $("enrichment-remove").onclick=async()=>{
   try{await saveState(removeEnrichment(current.dataset,current.id,$("enrichment-contact").value));chooseEnrichmentContact();notice("Added profile details removed. Original imported details restored.");}
   catch(error){fail(error);}finally{$("enrichment-remove").disabled=false;}
 };
+
+research=mountResearch({$,current:()=>current,save:saveState,showMap,screen,notice,config:configPromise});
+$('open-research').onclick=()=>research.show();

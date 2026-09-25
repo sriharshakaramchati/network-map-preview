@@ -46,6 +46,8 @@ export function normalizeContact(raw, source) {
     unit: text(raw.unit),
     block: text(raw.block),
     company: text(raw.company),
+    city: text(raw.city),
+    university: text(raw.university),
     role: text(raw.role),
     profile,
     sources: [source],
@@ -162,8 +164,8 @@ export function mergeIntoMap(existing, batch, ownerId) {
       for (const o of incoming.origins)
         if (!c.origins.some((v) => v.source === o.source && v.key === o.key))
           c.origins.push(o);
-      for (const field of ["unit", "block", "company", "role", "profile"])
-        if (!c[field]) c[field] = incoming[field];
+      for (const field of ["unit", "block", "company", "role", "profile", "city", "university"])
+        if (!c[field] && incoming[field]) c[field] = incoming[field];
       // Re-importing an overlapping Gmail sample replaces its aggregate, never double-counts it.
       if (incoming.interaction) c.interaction = incoming.interaction;
       if (before === JSON.stringify(c)) unchanged++;
