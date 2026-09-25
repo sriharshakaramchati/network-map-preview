@@ -83,17 +83,17 @@ export function mapData(dataset) {
     const verified = c.sources.includes("MYGATE"),
       conversation = !!c.interaction;
     const role =
-      [c.role, c.company].filter(Boolean).join(" · ") ||
+      [c.enrichment?.role || c.role, c.enrichment?.company || c.company].filter(Boolean).join(" · ") ||
       (c.unit ? `Unit ${c.unit} · ${c.block || "Community"}` : "");
     people.push({
       id: people.length,
       name: c.name,
       role,
-      link: c.profile || "",
-      conf: verified ? "Verified MyGate residency" : "Imported contact",
+      link: c.enrichment?.url || c.profile || "",
+      conf: [verified ? "Verified MyGate residency" : "Imported contact", c.enrichment ? `Profile confirmed by you · ${c.enrichment.source}` : ""].filter(Boolean).join(" · "),
       clusters: c.clusters,
       primary,
-      extra: { flat: c.unit, org: c.company || "" },
+      extra: { flat: c.unit, org: c.enrichment?.company || c.company || "" },
       row: people.length,
       tier: verified ? "resident" : conversation ? "correspondent" : "contact",
       r: conversation

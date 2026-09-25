@@ -5,8 +5,8 @@ const cell = value => {
   return '"'+s.replaceAll('"','""')+'"';
 };
 export function contactsCSV(contacts) {
-  const headers=['Name','Email','Phone','Company','Role','Unit','Block','LinkedIn URL','Sources'];
-  return '\ufeff'+[headers,...contacts.map(c=>[c.name,(c.emails||[]).join('; '),(c.phones||[]).join('; '),c.company,c.role,c.unit,c.block,c.profile,(c.sources||[]).join('; ')])].map(row=>row.map(cell).join(',')).join('\r\n')+'\r\n';
+  const headers=['Name','Email','Phone','Company','Role','Unit','Block','LinkedIn URL','Sources','Public profile','Profile confirmation'];
+  return '\ufeff'+[headers,...contacts.map(c=>[c.name,(c.emails||[]).join('; '),(c.phones||[]).join('; '),c.enrichment?.company||c.company,c.enrichment?.role||c.role,c.unit,c.block,c.profile,(c.sources||[]).join('; '),c.enrichment?.url||'',c.enrichment?.confirmedAt||''])].map(row=>row.map(cell).join(',')).join('\r\n')+'\r\n';
 }
 export function downloadContacts(contacts,filename='my-community.csv') {
   const url=URL.createObjectURL(new Blob([contactsCSV(contacts)],{type:'text/csv;charset=utf-8'}));

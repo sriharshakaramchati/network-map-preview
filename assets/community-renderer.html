@@ -188,14 +188,14 @@ if(!STATIC){
  const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  const meta=p=>{const m=[p.clusters.join(' · ')];if(p.extra.yc)m.push(p.extra.yc);if(p.extra.grade)m.push('Grade '+p.extra.grade+(p.extra.connect?', connect '+p.extra.connect+'/10':''));if(p.extra.flat)m.push(p.extra.flat);if(p.conf)m.push(p.conf);return m.join(' · ')};
  gN.addEventListener('pointermove',e=>{const g=e.target.closest('.node');if(!g){tip.style.opacity=0;return}const p=P[+g.dataset.id];
-   tip.innerHTML=`<b>${esc(p.name)}</b><div class="r">${esc(p.role||'Role not found')}</div><div class="m">${esc(meta(p))}</div>`;
+   tip.innerHTML=`<b>${esc(p.name)}</b><div class="r">${esc(p.role||'Role not provided')}</div><div class="m">${esc(meta(p))}</div>`;
    tip.style.left=Math.min(e.clientX+16,innerWidth-340)+'px';tip.style.top=(e.clientY+16)+'px';tip.style.opacity=1});
  gN.addEventListener('pointerleave',()=>tip.style.opacity=0);
  const card=document.getElementById('card');
  function hl(ids){if(!ids){svg.classList.remove('dim');document.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'));return}
    svg.classList.add('dim');document.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'));ids.forEach(i=>{nodeEl[i].classList.add('hl');(edgesOf[i]||[]).forEach(e=>e.classList.add('hl'))})}
  function showP(p,fromAsk){
-   document.getElementById('ct').textContent=TIER[p.tier][1];document.getElementById('cn').textContent=p.name;document.getElementById('cr').textContent=p.role||'Role not found';document.getElementById('cm').textContent=meta(p);
+   document.getElementById('ct').textContent=TIER[p.tier][1];document.getElementById('cn').textContent=p.name;document.getElementById('cr').textContent=p.role||'Role not provided';document.getElementById('cm').textContent=meta(p);
    const a=document.getElementById('cl');if(p.link){a.href=p.link;a.style.display='inline-block'}else a.style.display='none';card.style.display='block';hl([p.id]);document.getElementById('cc').innerHTML=window.__contactHTML?window.__contactHTML(p):'';document.getElementById('cback').style.display=fromAsk?'block':'none';}
  window.__show=showP;window.__hl=hl;
  gN.addEventListener('click',e=>{if(dr&&dr[4])return;const g=e.target.closest('.node');if(!g)return;const p=P[+g.dataset.id];showP(p,false);const ar=document.getElementById('askres');if(ar)ar.style.display='none'});

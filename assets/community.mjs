@@ -1,3 +1,4 @@
+import {searchProfiles, applyEnrichment, removeEnrichment} from "./enrichment.mjs";
 import {emailMapId, googleMapSecret, mountGoogleSignIn} from "./account.mjs";
 import {downloadContacts} from "./export.mjs";
 import {showSampleMap} from "./sample.mjs";
@@ -38,7 +39,7 @@ const notice = (message) => {
 };
 function screen(id) {
   $("demo-section").hidden = id !== "setup";
-  for (const n of ["setup", "sources", "import-panel", "review", "map-view"])
+  for (const n of ["setup", "sources", "import-panel", "review", "map-view", "enrichment"])
     $(n).hidden = n !== id;
   notice("");
 }
@@ -68,6 +69,7 @@ function sources() {
   $("map-summary").textContent =
     `${current.dataset.displayName} · ${current.dataset.contacts.length} people in this map`;
   $("view-map").disabled = !current.dataset.contacts.length;
+  $("open-enrichment").disabled = !current.dataset.contacts.length;
 }
 async function saveState(dataset = current.dataset, pending = current.pending) {
   const value = { kind: "map", dataset, ...(pending ? { pending } : {}) };
@@ -172,9 +174,9 @@ $("unlock-form").onsubmit = async (e) => {
     button.disabled = false;
   }
 };
-const lock = () => { globalThis.google?.accounts?.id?.disableAutoSelect?.(); location.replace("index.html"); };
-$("lock").onclick = lock;
-document.querySelectorAll(".lock-map").forEach((b) => (b.onclick = lock));
+const signOut = () => { globalThis.google?.accounts?.id?.disableAutoSelect?.(); location.replace("index.html"); };
+$("lock").onclick = signOut;
+document.querySelectorAll(".lock-map").forEach((b) => (b.onclick = signOut));
 $("reset-preview").onclick = async () => {
   if (!confirm("Delete all saved maps and unfinished imports from this preview on this device? This cannot be undone. Your Google Contacts, MyGate account and original demo will not be changed.")) return;
   $("reset-preview").disabled = true;
@@ -351,10 +353,22 @@ function showReview(value) {
   batch = value;
   proposal = mergeIntoMap(current.dataset, batch, current.id);
   screen("review");
-  $("review-summary").textContent =
-    `${SOURCES[batch.source]} · ${proposal.added} new people, ${proposal.updated} updated, ${proposal.unchanged} already in your map.`;
+  const unchanged = proposal.added === 0 && proposal.updated === 0;
+  $("review-status").textContent = unchanged ? "Already saved" : "Import preview";
+  $("review-title").textContent = unchanged ? "Your map is up to date" : "Review your import";
+  $("review-summary").textContent = unchanged
+    ? `${proposal.unchanged.toLocaleString("en-US")} ${proposal.unchanged === 1 ? "contact" : "contacts"} from ${SOURCES[batch.source]} ${proposal.unchanged === 1 ? "is" : "are"} already in your map. No new contacts or changes were found.`
+    : `${SOURCES[batch.source]} · ${[
+        proposal.added ? `${proposal.added} new ${proposal.added === 1 ? "contact" : "contacts"}` : "",
+        proposal.updated ? `${proposal.updated} updated` : "",
+        proposal.unchanged ? `${proposal.unchanged} already saved` : "",
+      ].filter(Boolean).join(", ")}.`;
+  $("review-preview").hidden = unchanged;
+  $("review-help").hidden = unchanged;
+  $("save-import").textContent = unchanged ? "View my map" : "Add to my map";
+  $("discard-import").textContent = unchanged ? "Back to imports" : "Discard import";
   $("review-detail").textContent = [
-    batch.skipped ? `${batch.skipped} unnamed records skipped.` : "",
+    batch.skipped ? `${batch.skipped} records had no name and were skipped.` : "",
     proposal.ambiguous
       ? `${proposal.ambiguous} ambiguous matches kept separate.`
       : "",
@@ -385,7 +399,8 @@ $("save-import").onclick = async () => {
   $("save-import").disabled = true;
   try {
     const pending = current.pending;
-    await saveState(proposal.dataset, null);
+    const changed = proposal.added > 0 || proposal.updated > 0;
+    if (changed || pending) await saveState(changed ? proposal.dataset : current.dataset, null);
     if (pending) await endMyGate(pending).catch(() => {});
     batch = null;
     proposal = null;
@@ -545,3 +560,75 @@ $("mygate-start").onclick = async () => {
   }
 };
 savedMaps().catch(fail);
+
+// Public lookups are opt-in and stay separate from automatic contact import.
+let enrichmentAbort = null, enrichmentCandidate = null, enrichmentNextSearch = 0;
+function resetEnrichmentResults() {
+  enrichmentAbort?.abort(); enrichmentAbort = null; enrichmentCandidate = null;
+  $("enrichment-submit").disabled = false;
+  $("enrichment-results").replaceChildren(); $("enrichment-confirm").hidden = true;
+  $("enrichment-status").textContent = "";
+}
+function chooseEnrichmentContact() {
+  resetEnrichmentResults();
+  const contact = current.dataset.contacts.find(c=>c.id===$("enrichment-contact").value);
+  $("enrichment-query").value = contact?.name || "";
+  $("enrichment-submit").disabled = !contact;
+  $("enrichment-remove").hidden = !contact?.enrichment;
+  $("enrichment-existing").textContent = contact ? `Current details: ${[contact.enrichment?.role || contact.role,contact.enrichment?.company || contact.company].filter(Boolean).join(" · ") || "Role not provided"}` : "No contacts match your search.";
+}
+function filterEnrichmentContacts() {
+  const query = $("enrichment-filter").value.trim().toLocaleLowerCase();
+  const matches = current.dataset.contacts.filter(c=>[c.name,c.company,c.role].join(" ").toLocaleLowerCase().includes(query)).slice(0,100);
+  $("enrichment-contact").replaceChildren(...matches.map(c=>{
+    const option=document.createElement("option");option.value=c.id;
+    option.textContent=[c.name,c.company,c.unit,c.block].filter(Boolean).join(" · ");return option;
+  }));
+  chooseEnrichmentContact();
+}
+$("open-enrichment").onclick=()=>{ screen("enrichment");$("enrichment-filter").value="";filterEnrichmentContacts(); };
+$("enrichment-filter").oninput=filterEnrichmentContacts;
+$("enrichment-contact").onchange=chooseEnrichmentContact;
+$("enrichment-query").oninput=resetEnrichmentResults;
+$("enrichment-source").onchange=resetEnrichmentResults;
+$("enrichment-back").onclick=()=>{ resetEnrichmentResults();void showMap().catch(fail); };
+$("enrichment-search").onsubmit=async e=>{
+  e.preventDefault();resetEnrichmentResults();notice("");
+  if(Date.now()<enrichmentNextSearch){$("enrichment-status").textContent="Please wait a few seconds before another search.";return;}
+  enrichmentNextSearch=Date.now()+10000;
+  const controller=new AbortController();enrichmentAbort=controller;
+  $("enrichment-submit").disabled=true;$("enrichment-status").textContent="Searching public profiles…";
+  try {
+    const candidates=await searchProfiles($("enrichment-query").value,$("enrichment-source").value,{signal:controller.signal});
+    if(controller.signal.aborted)return;
+    $("enrichment-status").textContent=candidates.length ? `${candidates.length} possible ${candidates.length===1?"match":"matches"}. Check the person before saving.` : "No public matches found. Your contact is unchanged. Try another source or a more complete name.";
+    for(const candidate of candidates){
+      const article=document.createElement("article");article.className="profile-candidate";
+      const title=document.createElement("h2");title.textContent=candidate.name;
+      const description=document.createElement("p");description.textContent=candidate.description || "No public description provided.";
+      const detail=document.createElement("p");detail.className="fine";detail.textContent=[candidate.source,candidate.role,candidate.company].filter(Boolean).join(" · ");
+      const button=document.createElement("button");button.className="secondary";button.type="button";button.textContent="Review this match";
+      button.onclick=()=>{
+        enrichmentCandidate=candidate;$("enrichment-confirm").hidden=false;
+        $("enrichment-evidence").textContent=`${candidate.name} · ${candidate.source}: ${candidate.description || "No description"}. ${candidate.source==='GitHub'?'GitHub has no occupation field. Only enter a profession explicitly supported by this bio or profile.':'Occupation and employer are public Wikidata statements; check that they are current.'}`;
+        $("enrichment-link").href=candidate.url;$("enrichment-role").value=candidate.role;$("enrichment-company").value=candidate.company;$("enrichment-identity").checked=false;
+        $("enrichment-confirm").scrollIntoView({block:"start"});
+      };
+      article.append(title,description,detail,button);$("enrichment-results").append(article);
+    }
+  }catch(error){if(!controller.signal.aborted)$("enrichment-status").textContent=error.name==='TimeoutError'?"The public source took too long. Please try later.":error.message;}
+  finally{if(enrichmentAbort===controller){enrichmentAbort=null;$("enrichment-submit").disabled=false;}}
+};
+$("enrichment-confirm").onsubmit=async e=>{
+  e.preventDefault();const button=e.target.querySelector("button");button.disabled=true;
+  try{
+    if(!enrichmentCandidate)throw new Error("Choose a public profile first.");
+    const dataset=applyEnrichment(current.dataset,current.id,$("enrichment-contact").value,enrichmentCandidate,{role:$("enrichment-role").value,company:$("enrichment-company").value,confirmed:$("enrichment-identity").checked});
+    await saveState(dataset);resetEnrichmentResults();await showMap();
+  }catch(error){fail(error);}finally{button.disabled=false;}
+};
+$("enrichment-remove").onclick=async()=>{
+  $("enrichment-remove").disabled=true;
+  try{await saveState(removeEnrichment(current.dataset,current.id,$("enrichment-contact").value));chooseEnrichmentContact();notice("Added profile details removed. Original imported details restored.");}
+  catch(error){fail(error);}finally{$("enrichment-remove").disabled=false;}
+};
