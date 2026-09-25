@@ -41,9 +41,7 @@ export async function createIdentity() {
     privateKey: await crypto.subtle.exportKey("jwk", pair.privateKey),
   };
 }
-export async function lockVault(id, privateData, password) {
-  if (password.length < 12)
-    throw new Error("Use at least 12 characters for this map’s password.");
+export async function lockVault(id, privateData, password, auth) {
   const salt = crypto.getRandomValues(new Uint8Array(16)),
     iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await passwordKey(password, salt, ["encrypt"]);
@@ -65,6 +63,7 @@ export async function lockVault(id, privateData, password) {
       salt: toBase64(salt),
       iv: toBase64(iv),
       ciphertext: toBase64(encrypted),
+      ...(auth ? {auth} : {}),
     };
   } finally {
     bytes.fill(0);
@@ -159,6 +158,7 @@ export async function persistVault(record, expectedCiphertext) {
           salt: record.salt,
           iv: record.iv,
           ciphertext: record.ciphertext,
+          ...(record.auth ? {auth:record.auth} : {}),
         });
       if (expectedCiphertext === undefined) put();
       else {

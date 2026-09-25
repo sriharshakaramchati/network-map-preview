@@ -1,3 +1,6 @@
+import {emailMapId, googleMapSecret, mountGoogleSignIn} from "./account.mjs";
+import {downloadContacts} from "./export.mjs";
+import {showSampleMap} from "./sample.mjs";
 import {
   lockVault,
   unlockVault,
@@ -32,6 +35,7 @@ const notice = (message) => {
   $("notice").textContent = message;
 };
 function screen(id) {
+  $("demo-section").hidden = id !== "setup";
   for (const n of ["setup", "sources", "import-panel", "review", "map-view"])
     $(n).hidden = n !== id;
   notice("");
@@ -41,7 +45,7 @@ function fail(error) {
     notice(error.message || "Import could not complete. Please try again.");
 }
 async function savedMaps() {
-  records = await listVaults();
+  records = (await listVaults()).filter(r=>r.auth?.method!=="google");
   $("saved").hidden = !records.length;
   $("map-choice").replaceChildren(
     ...records.map((r, i) => {
@@ -62,7 +66,7 @@ function sources() {
 }
 async function saveState(dataset = current.dataset, pending = current.pending) {
   const value = { kind: "map", dataset, ...(pending ? { pending } : {}) };
-  const record = await lockVault(current.id, value, current.password);
+  const record = await lockVault(current.id, value, current.password, current.auth);
   await persistVault(record, current.record?.ciphertext ?? null);
   current.record = record;
   current.dataset = dataset;
@@ -84,32 +88,47 @@ async function showMap() {
     );
   screen("map-view");
 }
-$("create-form").onsubmit = async (e) => {
-  e.preventDefault();
-  notice("");
-  const password = $("password").value;
-  if (password !== $("confirm").value)
-    return notice("The passwords do not match.");
-  $("create").disabled = true;
+async function enterMap(record,password,id,displayName,auth) {
+  const data = record ? await unlockVault(record,password) : {kind:'map',dataset:newMap(id,displayName)};
+  if (data.kind !== 'map') throw new Error('Open this older import from the saved maps section.');
+  current={id,password,auth,record:record||null,dataset:upgradeMap(data.dataset,id),pending:data.pending||null};
+  if (!record) await saveState();
+  if(current.pending){await selectSource('MYGATE');void resumeMyGate().catch(fail);}
+  else if(current.dataset.contacts.length) await showMap(); else sources();
+}
+$('create-form').onsubmit = async e => {
+  e.preventDefault();notice('');$('create').disabled=true;
   try {
-    const id = crypto.randomUUID();
-    current = {
-      id,
-      password,
-      dataset: newMap(id, $("owner-name").value),
-      record: null,
-      pending: null,
-    };
-    await saveState();
-    $("create-form").reset();
-    sources();
-  } catch (error) {
-    current = null;
-    fail(error);
-  } finally {
-    $("create").disabled = false;
-  }
+    const email=$('owner-email').value.trim().toLowerCase(),id=await emailMapId(email);
+    const record=(await listVaults()).find(r=>r.id===id);
+    await enterMap(record,$('password').value,id,email.split('@')[0]);
+    $('create-form').reset();
+  } catch(error){current=null;fail(error);} finally{$('create').disabled=false;}
 };
+async function prepareGoogleLogin() {
+  const button=$('google-login-start');
+  button.disabled=true;
+  button.textContent='Loading Google sign-in…';
+  try {
+    await mountGoogleSignIn($('google-login'),await configPromise,async account=>{
+      const record=(await listVaults()).find(r=>r.id===account.id);
+      const {password,auth}=googleMapSecret(account,record);
+      await enterMap(record,password,account.id,account.name,auth);
+    },fail,busy=>{
+      $('create').disabled=busy;
+      if(busy) notice('Signing in… The free service may take a moment to wake up.');
+    });
+    button.hidden=true;
+  } catch(error) {
+    button.disabled=false;
+    button.textContent='Retry Google sign-in';
+    $('google-login').textContent='Google sign-in is temporarily unavailable. You can use email below.';
+  }
+}
+$('google-login-start').onclick=()=>{ $('google-login').replaceChildren(); void prepareGoogleLogin(); };
+void prepareGoogleLogin();
+$('export-contacts').onclick=()=>{if(current)downloadContacts(current.dataset.contacts);};
+showSampleMap().catch(()=>{$('sample-loading').textContent='The sample could not load. Refresh to try again.';});
 $("unlock-form").onsubmit = async (e) => {
   e.preventDefault();
   const button = e.target.querySelector("button");
@@ -142,7 +161,7 @@ $("unlock-form").onsubmit = async (e) => {
     button.disabled = false;
   }
 };
-const lock = () => location.replace("community.html");
+const lock = () => { globalThis.google?.accounts?.id?.disableAutoSelect?.(); location.replace("index.html"); };
 $("lock").onclick = lock;
 document.querySelectorAll(".lock-map").forEach((b) => (b.onclick = lock));
 $("view-map").onclick = () => showMap().catch(fail);
