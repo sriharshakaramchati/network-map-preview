@@ -19,7 +19,7 @@ import {
   CONTACTS_SCOPE,
   GMAIL_SCOPE,
 } from "./imports/google.mjs";
-import { startMyGate, pollMyGate, endMyGate } from "./imports/mygate.mjs";
+import { startMyGate, pollMyGate, endMyGate, myGateStatus } from "./imports/mygate.mjs";
 const $ = (id) => document.getElementById(id);
 let records = [],
   current = null,
@@ -412,26 +412,76 @@ $("google-signin").onclick = async () => {
   }
 };
 async function resumeMyGate() {
+  if (operation) return;
   selected = "MYGATE";
   screen("import-panel");
   $("mygate-start").hidden = true;
   $("mygate-wait").hidden = false;
   $("cancel-import").hidden = false;
   $("back-sources").disabled = true;
-  operation = new AbortController();
-  const signal = operation.signal;
-  const { verificationUrl } = await import("./reclaim-launch.mjs");
-  $("verify").href = await verificationUrl(current.pending.config);
+  $("verify").hidden = true;
+  $("verify").removeAttribute("href");
+  $("retry-mygate").hidden = true;
+  $("restart-mygate").hidden = true;
+  $("progress").textContent = "Checking your saved import…";
+  const controller = new AbortController();
+  operation = controller;
+  const signal = controller.signal, pending = current.pending;
+  let launchFailed = false;
   try {
-    const value = await pollMyGate(current.pending, signal, (message) => {
-      $("progress").textContent = message;
-    });
+    // A completed callback must remain recoverable even after Reclaim expires.
+    const status = await myGateStatus(pending, signal);
+    signal.throwIfAborted();
+    if (status.status === "pending") {
+      try {
+        let url = pending.verificationUrl;
+        if (!url) {
+          const { verificationUrl } = await import("./reclaim-launch.mjs");
+          url = await verificationUrl(pending.config);
+          signal.throwIfAborted();
+          // Keep the launch URL in the encrypted vault, alongside the session.
+          await saveState(current.dataset, { ...pending, verificationUrl: url });
+        }
+        signal.throwIfAborted();
+        $("verify").href = url;
+        $("verify").hidden = false;
+      } catch (error) {
+        signal.throwIfAborted();
+        launchFailed = true;
+        $("restart-mygate").hidden = false;
+        $("progress").textContent = "This verification link could not reopen. We’re still checking for a completed import. You can also start a new verification.";
+      }
+    }
+    const value = await pollMyGate(pending, signal, (message) => {
+      if (!launchFailed || message === "Checking your MyGate proof…")
+        $("progress").textContent = message;
+    }, status);
     signal.throwIfAborted();
     showReview(value);
+  } catch (error) {
+    if (signal.aborted) return;
+    if (error.code === "SESSION_EXPIRED") {
+      $("verify").hidden = true;
+      $("progress").textContent = "This verification has expired. Start a new verification to continue.";
+      $("restart-mygate").hidden = false;
+    } else {
+      $("progress").textContent = "We couldn’t check your import. Your saved map is safe. Try checking again.";
+      $("retry-mygate").hidden = false;
+    }
   } finally {
-    operation = null;
+    if (operation === controller) operation = null;
   }
 }
+$("retry-mygate").onclick = () => resumeMyGate().catch(fail);
+$("restart-mygate").onclick = async () => {
+  $("restart-mygate").disabled = true;
+  try {
+    await cancelImport();
+    await selectSource("MYGATE");
+    await $("mygate-start").onclick();
+  } catch (error) { fail(error); }
+  finally { $("restart-mygate").disabled = false; }
+};
 $("mygate-start").onclick = async () => {
   $("mygate-start").disabled = true;
   $("back-sources").disabled = true;

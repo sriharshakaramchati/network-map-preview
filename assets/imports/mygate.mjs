@@ -12,13 +12,14 @@ export async function callbackRequest(origin, path, token, options = {}) {
       ...(token ? { Authorization: "Bearer " + token } : {}),
     },
   }).catch(() => {
+    options.signal?.throwIfAborted();
     throw new Error(
       "Could not reach MyGate verification. Unlock the saved import to resume.",
     );
   });
   if (!response.ok) {
     if ([404, 410].includes(response.status))
-      throw new Error("This verification expired. Cancel it and start again.");
+      throw Object.assign(new Error("This verification expired. Start a new verification."), { code: "SESSION_EXPIRED" });
     throw new Error(
       "MyGate verification is unavailable. Please try again later.",
     );
@@ -52,12 +53,14 @@ export const endMyGate = (state) =>
     state.token,
     { method: "DELETE" },
   );
-export async function pollMyGate(state, signal, onProgress) {
+export const myGateStatus = (state, signal) => callbackRequest(
+  state.origin, "/v1/sessions/" + encodeURIComponent(state.sessionId), state.token, { signal },
+);
+export async function pollMyGate(state, signal, onProgress, initialStatus) {
   const path = "/v1/sessions/" + encodeURIComponent(state.sessionId);
   while (!signal.aborted) {
-    const result = await callbackRequest(state.origin, path, state.token, {
-      signal,
-    });
+    const result = initialStatus || await myGateStatus(state, signal);
+    initialStatus = null;
     if (result.status === "ready") {
       const envelope = await callbackRequest(
         state.origin,
