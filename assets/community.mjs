@@ -125,12 +125,6 @@ async function prepareGoogleLogin() {
       const record=(await listVaults()).find(r=>r.id===account.id);
       const {password,auth}=googleMapSecret(account,record);
       await enterMap(record,password,account.id,account.name,auth);
-      if (!current.pending && !current.dataset.imports.some(i => i.source === "GOOGLE")) {
-        await selectSource("GOOGLE");
-        googleAutoEmail = account.email;
-        $("skip-google").hidden = false;
-        await $("google-signin").onclick();
-      }
     },fail,busy=>{
       $('create').disabled=busy;
       if(busy) notice('Signing in… The free service may take a moment to wake up.');
