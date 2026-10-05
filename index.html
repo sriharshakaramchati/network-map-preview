@@ -1,7 +1,232 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="strict-origin-when-cross-origin"><title>Private network preview</title><link rel="stylesheet" href="assets/community.css"><body><main class="wrap"><div class="orb" aria-hidden="true"><span></span><span></span><span></span></div><div class="eyebrow">Private staging preview</div><h1>The Network</h1><p>Enter the preview password to review this build. Your imported map uses your own sign-in.</p><form id="stage-form"><label for="stage-password">Preview password</label><input id="stage-password" type="password" autocomplete="current-password" required><button id="stage-unlock">Unlock preview</button></form><p id="stage-notice" role="status"></p></main><script>
-(()=>{
-const P={"salt":"rY9ttdK3560RgqQVhfnMKQ==","iv":"hwoWCbusZWZHxx/E","ct":"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","iter":600000};
-const u=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-document.getElementById('stage-form').onsubmit=async e=>{e.preventDefault();const button=document.getElementById('stage-unlock'),notice=document.getElementById('stage-notice');let password=document.getElementById('stage-password').value;button.disabled=true;notice.textContent='Unlocking…';try{const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);const key=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:u(P.salt),iterations:P.iter},base,{name:'AES-GCM',length:256},false,['decrypt']);const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:u(P.iv)},key,u(P.ct));const html=new TextDecoder().decode(pt);new Uint8Array(pt).fill(0);document.open();document.write(html);document.close();const demo=document.getElementById('pw');if(demo&&document.getElementById('f')){demo.value=password;document.getElementById('f').requestSubmit();}password='';}catch{password='';notice.textContent='Wrong preview password.';button.disabled=false;document.getElementById('stage-password').value='';}};
-})();
-</script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>KYN · Create my community</title>
+    <link rel="stylesheet" href="assets/community.css" />
+  </head>
+  <body>
+    <main id="setup" class="homepage">
+      <nav class="home-nav"><a class="brand" href="index.html">KYN <span>Know your network</span></a><a href="#demo-section">Explore the demo ↓</a></nav>
+      <div class="home-hero">
+        <div class="home-copy">
+          <div class="eyebrow">The people around you. The possibilities ahead.</div>
+          <h1>Create my<br><em>community.</em></h1>
+          <p class="home-description">Turn your communities, contacts and conversations into a map you can explore.</p>
+          <div id="google-login"></div>
+          <button id="google-login-start" type="button">Continue with Google</button>
+          <p class="fine">Google sign-in only identifies you. Import with MyGate or CSV. Google Contacts is coming soon.</p>
+          <div class="login-divider"><span>or use email</span></div>
+          <form id="create-form">
+            <label for="owner-email">Email address</label><input id="owner-email" type="email" autocomplete="email" required placeholder="you@example.com" />
+            <label for="password">Map password</label><input id="password" type="password" autocomplete="current-password" required placeholder="Choose any password" />
+            <button id="create" type="submit">Create my community</button>
+          </form>
+          <p class="fine">Returning? Use the same sign-in to open your map. Your map stays encrypted in this browser. Clearing browser storage removes it. Email passwords are for this map, not your email account.</p>
+          <section id="saved" hidden>
+            <details><summary>Open an earlier map</summary>
+              <form id="unlock-form"><label for="map-choice">Choose a saved map</label><select id="map-choice"></select><label for="unlock-password">Map password</label><input id="unlock-password" type="password" autocomplete="current-password" required /><button type="submit">Unlock my map</button></form>
+            </details>
+          </section>
+          <button id="reset-preview" class="secondary" type="button" hidden>Reset saved preview data</button>
+        </div>
+        <div class="hero-network" aria-label="Illustration of a community network">
+          <svg viewBox="0 0 600 560" role="img" aria-label="A community with connections across Cedar, Maple and Willow">
+            <defs><radialGradient id="glow"><stop stop-color="#f4e5b9" stop-opacity=".25"/><stop offset="1" stop-color="#f4e5b9" stop-opacity="0"/></radialGradient></defs>
+            <circle cx="300" cy="280" r="180" fill="url(#glow)"/>
+            <g stroke="#38434c" stroke-width="1"><path d="M300 280 155 155 185 115 218 174 300 280 442 149 475 196 405 209 300 280 356 421 302 449 251 396 300 280M155 155 218 174M442 149 405 209M356 421 251 396" fill="none"/></g>
+            <g fill="#a8d5be"><circle cx="155" cy="155" r="9"/><circle cx="185" cy="115" r="5"/><circle cx="218" cy="174" r="6"/><circle cx="120" cy="183" r="4"/><circle cx="160" cy="203" r="3"/></g>
+            <g fill="#a4bed7"><circle cx="442" cy="149" r="8"/><circle cx="475" cy="196" r="5"/><circle cx="405" cy="209" r="6"/><circle cx="479" cy="134" r="3"/><circle cx="432" cy="232" r="4"/></g>
+            <g fill="#c6aedb"><circle cx="356" cy="421" r="8"/><circle cx="302" cy="449" r="5"/><circle cx="251" cy="396" r="6"/><circle cx="396" cy="383" r="4"/><circle cx="237" cy="449" r="3"/></g>
+            <circle cx="300" cy="280" r="13" fill="#e9d9ad"/><circle cx="300" cy="280" r="24" fill="none" stroke="#e9d9ad" opacity=".3"/>
+            <g fill="#cbd0d2" font-family="sans-serif" font-size="12" letter-spacing="2"><text x="120" y="85">CEDAR</text><text x="417" y="103">MAPLE</text><text x="284" y="489">WILLOW</text></g>
+            <text x="300" y="322" text-anchor="middle" fill="#eee5d3" font-family="Georgia,serif" font-style="italic" font-size="23">You</text>
+          </svg>
+          <div class="network-caption"><span class="status-dot"></span> A whole community, connected.</div>
+        </div>
+      </div>
+    </main>
+    <section id="demo-section" class="demo-section">
+      <div class="demo-heading"><div><div class="eyebrow">Try it before you make it</div><h2>Your community,<br><em>in a new light.</em></h2><p>Zoom, search, click a person, or ask whom to talk to. These 48 sample contacts are fictional.</p></div><button id="sample-export" class="secondary">Export sample CSV ↓</button></div>
+      <p id="sample-loading" role="status">Loading the interactive sample…</p>
+      <iframe id="sample-map" title="Interactive sample community map" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>
+      <div class="demo-footer"><a href="#setup">Create my community ↑</a><a href="privacy.html">Privacy</a></div>
+    </section>
+    <main id="sources" class="wrap wide" hidden>
+      <div class="toolbar">
+        <button id="view-map" class="secondary">View my map</button
+        ><button class="secondary lock-map">Sign out</button>
+      </div>
+      <div class="eyebrow">Your private network</div>
+      <h1>Add to your map</h1>
+      <p id="map-summary"></p>
+      <div class="source-grid">
+        <button class="source" data-source="MYGATE">
+          <strong>MyGate community</strong
+          ><span>Import your community privately</span>
+        </button>
+        <button class="source" data-source="GOOGLE" disabled aria-disabled="true">
+          <strong>Google Contacts</strong
+          ><span>Coming soon</span>
+        </button>
+        <button class="source" data-source="GMAIL" disabled aria-disabled="true">
+          <strong>Gmail</strong><span>Coming soon</span>
+        </button>
+        <button class="source" data-source="LINKEDIN">
+          <strong>LinkedIn</strong><span>Official connections.csv export</span>
+        </button>
+        <button class="source" data-source="TELEGRAM">
+          <strong>Telegram</strong><span>Telegram Desktop JSON export</span>
+        </button>
+        <button class="source" data-source="CSV">
+          <strong>Import from CSV</strong><span>Upload and match your columns</span>
+        </button>
+      </div>
+      <button id="open-research">Research professions automatically</button>
+      <button id="open-enrichment" class="secondary">Find public profiles</button>
+      <p class="fine">
+        Files stay in this browser. Google data comes directly from Google after
+        your consent. Imports are added only to this unlocked map.
+        <a href="privacy.html" target="_blank" rel="noopener"
+          >Privacy details</a
+        >
+      </p>
+    </main>
+    <main id="research" class="wrap wide" hidden>
+      <div class="toolbar"><button id="research-view-map" class="secondary">View my map</button><button id="research-disable" class="secondary">Turn off automatic research</button></div>
+      <div class="eyebrow">Who lives here. What they do.</div>
+      <h1>Research your network</h1>
+      <p>We search each name with the context below, find professional roles on public websites, and save the evidence in your private map. New imports are researched automatically once enabled.</p>
+      <form id="research-form">
+        <div class="mapping-grid">
+          <label>City or area<input id="research-city" maxlength="100" placeholder="e.g. Hyderabad" /></label>
+          <label>Community (optional)<input id="research-community" maxlength="100" placeholder="e.g. Rajapushpa Atria" /></label>
+          <label>University (optional)<input id="research-university" maxlength="100" placeholder="For a shared alumni network" /></label>
+        </div>
+        <label class="confirmation"><input id="research-consent" type="checkbox" required /> Allow automatic searches using contact names, company/university labels and the location above.</label>
+        <p class="fine">Names and this context pass through our server to Tavily web search. Phone numbers, emails and flat numbers are not sent. Search providers may retain queries. Results are encrypted in this browser. Free shared allowance: up to 1,000 searches/month, then research pauses without charges. Keep this page open while it runs; progress can resume later. <a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy details</a></p>
+        <button id="research-run" type="submit">Start automatic research</button>
+      </form>
+      <button id="research-pause" class="secondary" hidden>Pause research</button>
+      <p id="research-progress" role="status"></p><p id="research-summary"></p>
+      <p class="fine">Strong and Possible are professional-profile matches, not proof of residency. Only matches you recognise are marked Confirmed by you. Existing imports are retained.</p>
+      <label for="research-filter">Search researched contacts</label><input id="research-filter" type="search" placeholder="Name, doctor, founder, company or block" />
+      <label for="research-status-filter">Show</label><select id="research-status-filter"><option value="all">All contacts</option><option value="review">Uncertain matches to review</option></select>
+      <div class="preview-table"><table><thead><tr><th>Name</th><th>Unit / block</th><th>Profession / organisation</th><th>Confidence</th><th>Evidence</th></tr></thead><tbody id="research-rows"></tbody></table></div>
+      <p class="fine">Showing up to 80 matching rows. Search above to find anyone in your map.</p>
+      <section id="research-review" hidden></section>
+    </main>
+    <main id="enrichment" class="wrap wide" hidden>
+      <button id="enrichment-back" class="back-button secondary">‹ Back to your map</button>
+      <div class="eyebrow">Understand your network</div>
+      <h1>Find public profiles</h1>
+      <p>Find a profession or company, review the evidence, then add it to your private map.</p>
+      <p class="fine">Wikidata covers mostly notable people. GitHub covers people with public developer profiles. Many contacts will have no match. These profiles may be outdated; a shared name does not confirm identity.</p>
+      <label for="enrichment-filter">Find a contact in your map</label>
+      <input id="enrichment-filter" type="search" placeholder="Search your saved contacts" />
+      <label for="enrichment-contact">Contact to enrich</label><select id="enrichment-contact"></select>
+      <p class="fine">Showing up to 100 local matches. Type above to find anyone in your map.</p>
+      <p id="enrichment-existing" class="fine"></p>
+      <button id="enrichment-remove" class="secondary" hidden>Remove added profile details</button>
+      <form id="enrichment-search">
+        <label for="enrichment-query">Name to search publicly</label><input id="enrichment-query" maxlength="100" required />
+        <label for="enrichment-source">Public source</label><select id="enrichment-source"><option>Wikidata</option><option>GitHub</option></select>
+        <p class="fine">Searching sends only the name above to the selected service, which also receives your IP address. Your email addresses, phone numbers and community details stay here. Nothing is searched automatically. <a href="privacy.html" target="_blank" rel="noopener noreferrer">Privacy details</a></p>
+        <button id="enrichment-submit" type="submit">Search public profiles</button>
+      </form>
+      <p id="enrichment-status" role="status"></p>
+      <div id="enrichment-results"></div>
+      <form id="enrichment-confirm" hidden>
+        <h2>Review this profile</h2><p id="enrichment-evidence"></p>
+        <a id="enrichment-link" target="_blank" rel="noopener noreferrer">Read the public profile ↗</a>
+        <label for="enrichment-role">Profession to add</label><input id="enrichment-role" maxlength="500" required />
+        <label for="enrichment-company">Company to add (optional)</label><input id="enrichment-company" maxlength="500" />
+        <label class="confirmation"><input id="enrichment-identity" type="checkbox" required /> I checked this is my contact and these details are supported by the profile.</label>
+        <p class="fine">Your confirmation is saved with the source link. This is not independent verification. You can remove these details to restore the imported fields.</p>
+        <button type="submit">Save profile to my map</button>
+      </form>
+    </main>
+    <main id="import-panel" class="wrap wide" hidden>
+      <button class="back-button secondary" id="back-sources">
+        ‹ All sources
+      </button>
+      <div class="eyebrow">Add to your map</div>
+      <h1 id="source-title"></h1>
+      <div id="source-guide"></div>
+      <div id="file-controls" hidden>
+        <label for="import-file">Choose an export file</label
+        ><input id="import-file" type="file" accept=".csv,text/csv" />
+        <p class="fine">
+          Up to 25 MB and 25,000 contacts. Your file is processed locally.
+        </p>
+      </div>
+      <form id="mapping-form" hidden>
+        <h2>Match your columns</h2>
+        <p>
+          A name is required. Choose a full name column, or first and last
+          names. Optional fields can be left out.
+        </p>
+        <div id="mapping-fields" class="mapping-grid"></div>
+        <button type="submit">Preview import</button>
+      </form>
+      <button id="google-signin" hidden>Continue with Google</button
+      ><button id="mygate-start" hidden>Import from MyGate</button>
+      <button id="skip-google" class="secondary" hidden>Use MyGate or CSV instead</button>
+      <div id="mygate-wait" hidden>
+        <a id="verify" class="button" target="_blank" rel="noopener noreferrer"
+          >Import from MyGate ↗</a
+        >
+        <p id="progress" role="status"></p>
+        <button id="retry-mygate" class="secondary" hidden>Check import again</button>
+        <button id="restart-mygate" class="secondary" hidden>Start a new verification</button>
+      </div>
+      <div class="toolbar">
+        <button id="cancel-import" class="secondary" hidden>
+          Cancel import
+        </button>
+      </div>
+    </main>
+    <main id="review" class="wrap wide" hidden>
+      <div id="review-status" class="eyebrow">Import preview</div>
+      <h1 id="review-title">Review your import</h1>
+      <p id="review-summary"></p>
+      <p id="review-detail" class="fine"></p>
+      <div id="review-preview" class="preview-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Contact</th>
+              <th>Company / unit</th>
+            </tr>
+          </thead>
+          <tbody id="preview-rows"></tbody>
+        </table>
+      </div>
+      <p id="review-help" class="fine">
+        Showing up to 8 contacts. Repeated records from the same source are not
+        duplicated; matching email addresses can link sources within your map.
+        Names alone never merge people.
+      </p>
+      <div class="toolbar">
+        <button id="save-import">Add to my map</button
+        ><button id="discard-import" class="secondary">Discard import</button>
+      </div>
+    </main>
+    <div id="notice" role="status" aria-live="polite"></div>
+    <section id="map-view" hidden aria-label="Your private network">
+      <iframe
+        id="map-frame"
+        title="Your private network"
+        sandbox="allow-scripts allow-same-origin"
+      ></iframe
+      ><button id="export-contacts" type="button">Export CSV</button>
+      <button id="add-contacts" aria-label="Add to your map">Add</button
+      ><button id="lock">Sign out</button>
+    </section>
+    <script type="module" src="assets/community.mjs"></script>
+  </body>
+</html>
