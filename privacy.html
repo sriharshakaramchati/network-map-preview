@@ -1,7 +1,96 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="strict-origin-when-cross-origin"><title>Private network preview</title><link rel="stylesheet" href="assets/community.css"><body><main class="wrap"><div class="orb" aria-hidden="true"><span></span><span></span><span></span></div><div class="eyebrow">Private staging preview</div><h1>The Network</h1><p>Enter the preview password to review this build. Your imported map uses your own sign-in.</p><form id="stage-form"><label for="stage-password">Preview password</label><input id="stage-password" type="password" autocomplete="current-password" required><button id="stage-unlock">Unlock preview</button></form><p id="stage-notice" role="status"></p></main><script>
-(()=>{
-const P={"salt":"gbPUnV36jg5ng0De3tDSBw==","iv":"iBSaSyA/pZc2kFib","ct":"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","iter":600000};
-const u=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-document.getElementById('stage-form').onsubmit=async e=>{e.preventDefault();const button=document.getElementById('stage-unlock'),notice=document.getElementById('stage-notice');let password=document.getElementById('stage-password').value;button.disabled=true;notice.textContent='Unlocking…';try{const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);const key=await crypto.subtle.deriveKey({name:'PBKDF2',hash:'SHA-256',salt:u(P.salt),iterations:P.iter},base,{name:'AES-GCM',length:256},false,['decrypt']);const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:u(P.iv)},key,u(P.ct));const html=new TextDecoder().decode(pt);new Uint8Array(pt).fill(0);document.open();document.write(html);document.close();const demo=document.getElementById('pw');if(demo&&document.getElementById('f')){demo.value=password;document.getElementById('f').requestSubmit();}password='';}catch{password='';notice.textContent='Wrong preview password.';button.disabled=false;document.getElementById('stage-password').value='';}};
-})();
-</script></body></html>
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><meta name="robots" content="noindex,nofollow" /><title>
+    Your private map - privacy</title
+  ><link rel="stylesheet" href="assets/community.css" />
+  <main class="wrap wide">
+    <a href="community.html">Back to your maps</a>
+    <h1>Your map stays yours</h1>
+    <p>
+      CSV, LinkedIn exports and Telegram exports are read in your browser.
+      Uploaded files are never sent to our server. We keep only the contact
+      fields needed for your map, encrypted in this browser.
+    </p>
+    <p>
+      Google sign-in shares a signed identity token with our callback server to
+      verify your account. We do not store or log this token or your profile.
+      Your map unlock uses both an account-specific secret returned after Google
+      verification and a random seed that stays on this device. Neither part alone
+      opens the map. Google sign-in is followed by a separate read-only Contacts permission request. Once you approve, contacts are imported automatically into your encrypted map. You can skip this and use MyGate or CSV. Gmail is only imported when you explicitly choose it.
+    </p>
+    <p>
+      Google Contacts uses Google's read-only Contacts permission. Gmail uses
+      its metadata-only permission to find correspondents from up to 500 sent
+      and 500 inbox messages. We request address headers, timestamps and labels,
+      not message bodies, subjects or attachments. Correspondent counts and
+      dates help rank your network. The sample is not your entire mail history.
+    </p>
+    <p>
+      Google OAuth access tokens are held in memory only, discarded after the
+      import or cancellation, and never written to browser storage or sent to
+      our callback server. You can remove the application's Google permission at
+      <a
+        href="https://myaccount.google.com/permissions"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Google Account connections</a
+      >.
+    </p>
+    <p>
+      MyGate proofs are verified and parsed briefly in the callback server's
+      memory. Only encrypted results are stored or returned. Proof contents and
+      contact data are never logged. Maps from other users and the original demo
+      are never merged into your map.
+    </p>
+    <p>
+      Automatic profession research is optional. After you enable it, existing and newly
+      imported contacts are searched one at a time using names and your chosen city,
+      community, company or university context. These fields pass through our server
+      to Tavily's web-search API, which can return publicly indexed LinkedIn profiles,
+      company pages and professional directories. Phone numbers, email addresses,
+      flat numbers, Google tokens and whole import files are not sent for research.
+      Our server processes searches in memory, never logs their contents, and returns
+      evidence encrypted to your browser. Saved matches, source links and progress
+      stay inside your encrypted map. Tavily receives the search queries and may
+      retain or use them to improve its services under its <a href="https://www.tavily.com/privacy" target="_blank" rel="noopener noreferrer">privacy policy</a>.
+      This is online research, not a completely offline operation. LinkedIn login
+      and private profiles are not accessed. Matches are suggestions: a matching
+      name, even with a city, is not proof of identity or residency. You can confirm
+      or reject suggestions and turn off future research. The free allowance is shared
+      across users; progress pauses when it is exhausted. Keep this tab open while
+      researching; interrupted work resumes from saved progress.
+    </p>
+    <p>
+      The separate manual public-profile lookup sends only the name you review to
+      Wikidata or GitHub directly from your browser. Those services receive your IP address
+      and may log requests under their own policies. We send no contact emails, phone numbers,
+      addresses, Google tokens or complete address books. Results stay in memory until you
+      confirm a match; confirmed details and their source are saved only in your encrypted map.
+      A matching name is not proof of identity. These sources have limited coverage and can be
+      outdated. You can remove added profile details without deleting imported fields.
+      See <a href="https://foundation.wikimedia.org/wiki/Policy:Privacy_policy" target="_blank" rel="noopener noreferrer">Wikimedia privacy</a>
+      and <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub privacy</a>.
+    </p>
+    <p>
+      Imported names, email addresses, phone numbers, units, blocks, companies,
+      roles, source references and interaction counts are used by our app to show and
+      search your own network. We do not sell your map, use it for ads or train
+      models on it. Search queries shared with external providers are subject to
+      their policies described above.
+    </p>
+    <p>
+      With email sign-in, the password is for this map, not your email account.
+      Your map password and complete decryption key are never sent to our server.
+      Email is a local map label; it is not verified and we send no email.
+      Google maps require online sign-in to reopen. Maps do not sync across devices.
+      Clearing browser storage removes your maps. There is no password recovery;
+      loss of the Google account or the service's unlock secret also prevents reopening
+      a Google map. CSV exports are ordinary, unencrypted files on your device. While a
+      map is unlocked, its contents exist in browser memory; encryption cannot
+      protect a compromised browser or device.
+    </p>
+  </main>
+</html>
